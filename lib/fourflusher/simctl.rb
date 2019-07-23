@@ -13,7 +13,7 @@ module Fourflusher
     private
 
     def simctl!(args)
-      xcrun!(['simctl'] + args)
+      xcrun_(['simctl'] + args)
     end
   end
 end

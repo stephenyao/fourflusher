@@ -57,6 +57,10 @@ module Fourflusher
       define_method(name.to_s + '!') do |*command|
         Executable.execute_command(name, Array(command).flatten, true)
       end
+
+      define_method(name.to_s + '_') do |*command|
+        Executable.execute_command(name, Array(command).flatten, true, false)
+      end
     end
 
     # Executes the given command displaying it if in verbose mode.
@@ -76,13 +80,13 @@ module Fourflusher
     #
     # @return [String] the output of the command (STDOUT and STDERR).
     #
-    def self.execute_command(executable, command, raise_on_failure = true)
+    def self.execute_command(executable, command, raise_on_failure = true, output_stderr = true)
       bin = which(executable)
       fail Fourflusher::Informative, "Unable to locate the executable `#{executable}`" unless bin
-
+    
       command = command.map(&:to_s)
       full_command = "#{bin} #{command.join(' ')}"
-
+    
       if Config.instance.verbose?
         UI.message("$ #{full_command}")
         stdout = Indenter.new(STDOUT)
@@ -91,11 +95,16 @@ module Fourflusher
         stdout = Indenter.new
         stderr = Indenter.new
       end
-
+    
       status = popen3(bin, command, stdout, stderr)
       stdout = stdout.join
       stderr = stderr.join
-      output = stdout + stderr
+      output = stdout
+      
+      if output_stderr
+        output += stderr
+      end
+    
       unless status.success?
         if raise_on_failure
           fail Fourflusher::Informative, "#{full_command}\n\n#{output}"
@@ -103,7 +112,7 @@ module Fourflusher
           UI.message("[!] Failed: #{full_command}".red)
         end
       end
-
+    
       output
     end
 
